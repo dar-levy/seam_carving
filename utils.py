@@ -193,7 +193,7 @@ class VerticalSeamImage(SeamImage):
     # @NI_decor
     def seams_removal(self, num_remove: int):
         """ Iterates num_remove times and removes num_remove vertical seams
-        
+
         Parameters:
             num_remove (int): number of vertical seam to be removed
 
@@ -215,46 +215,14 @@ class VerticalSeamImage(SeamImage):
             - removing seams couple of times (call the function more than once)
             - visualize the original image with removed seams marked (for comparison)
         """
-        cols_indices_to_remove = list()
-        tmp_mask = np.ones_like(self.gs, dtype=bool)
-        for _ in range(num_remove):
-            self.E = self.calc_gradient_magnitude()
-            self.M = self.calc_M()
-
-            seam = self.backtrack_seam()
-            for row, col in seam:
-                self.cumm_mask[row][col] = False
-                tmp_mask[row][col] = False
-
-            t = np.roll(self.gs, 1, axis=0)
-            self.gs = np.where(tmp_mask, self.gs, t)
-            self.gs = np.delete(self.gs, -1, axis=1)
-
-            t = np.roll(self.E, 1, axis=0)
-            self.E = np.where(tmp_mask, self.E, t)
-            self.E = np.delete(self.E, -1, axis=1)
-
-            t = np.roll(self.M, 1, axis=0)
-            self.M = np.where(tmp_mask, self.M, t)
-            self.M = np.delete(self.M, -1, axis=1)
-
-            t = np.roll(self.resized_rgb, 1, axis=0)
-            self.resized_rgb = np.where(tmp_mask, self.resized_rgb, t)
-            self.resized_rgb = np.delete(self.resized_rgb, -1, axis=1)
-
-            t = np.roll(tmp_mask, 1, axis=0)
-            tmp_mask = np.where(tmp_mask, tmp_mask, t)
-            tmp_mask = np.delete(tmp_mask, -1, axis=1)
-
-
-        self.seams_rgb = np.where(self.cumm_mask, self.seams_rgb, (1, 0, 0))
+        raise NotImplementedError("TODO: Implement SeamImage.seams_removal")
 
     def paint_seams(self):
         for s in self.seam_history:
             for i, s_i in enumerate(s):
-                self.cumm_mask[self.idx_map_v[i,s_i], self.idx_map_h[i,s_i]] = False
+                self.cumm_mask[self.idx_map_v[i, s_i], self.idx_map_h[i, s_i]] = False
         cumm_mask_rgb = np.stack([self.cumm_mask] * 3, axis=2)
-        self.seams_rgb = np.where(cumm_mask_rgb, self.seams_rgb, [1,0,0])
+        self.seams_rgb = np.where(cumm_mask_rgb, self.seams_rgb, [1, 0, 0])
 
     def init_mats(self):
         self.E = self.calc_gradient_magnitude()
@@ -269,30 +237,9 @@ class VerticalSeamImage(SeamImage):
         Parameters:
             num_remove (int): number of horizontal seam to be removed
         """
-        # self.rotate_mats(clockwise=True)
-        # self.seams_removal(num_remove)
-        # self.rotate_mats(clockwise=False)
-        self.gs = np.transpose(self.gs, (1, 0, 2))
-        self.E = np.transpose(self.E, (1, 0, 2))
-        self.cumm_mask = np.transpose(self.cumm_mask, (1, 0, 2))
-        self.seams_rgb = np.transpose(self.seams_rgb, (1, 0, 2))
-        self.resized_rgb = np.transpose(self.resized_rgb, (1, 0, 2))
-        self.mt = np.ndarray(shape=(self.E.shape[0],
-                                    self.E.shape[1],
-                                    self.E.shape[2] + 1), dtype=np.int32)
-        self.mt = VerticalSeamImage.calc_bt_mat(self.M, self.mt)
-
+        self.rotate_mats(clockwise=True)
         self.seams_removal(num_remove)
-
-        self.gs = np.transpose(self.gs, (1, 0, 2))
-        self.E = np.transpose(self.E, (1, 0, 2))
-        self.cumm_mask = np.transpose(self.cumm_mask, (1, 0, 2))
-        self.seams_rgb = np.transpose(self.seams_rgb, (1, 0, 2))
-        self.resized_rgb = np.transpose(self.resized_rgb, (1, 0, 2))
-        self.mt = np.ndarray(shape=(self.M.shape[0],
-                                    self.M.shape[1],
-                                    self.M.shape[2] + 1), dtype=np.int32)
-        self.mt = VerticalSeamImage.calc_bt_mat(self.M, self.mt)
+        self.rotate_mats(clockwise=False)
 
     # @NI_decor
     def seams_removal_vertical(self, num_remove):
@@ -301,32 +248,13 @@ class VerticalSeamImage(SeamImage):
         Parameters:
             num_remove (int): umber of vertical seam to be removed
         """
-        self.seams_removal(num_remove)
+        raise NotImplementedError("TODO: Implement SeamImage.seams_removal_vertical")
 
     # @NI_decor
     def backtrack_seam(self):
         """ Backtracks a seam for Seam Carving as taught in lecture
         """
-        last_row = len(self.M) - 2
-        col = np.argmin(self.M[last_row][1:-1])
-        seam = []
-        for row in range(last_row, 1, -1):
-            seam.append([row, col])
-
-            cl = np.abs(self.gs[row][col + 1] - self.gs[row][col - 1]) + \
-                 np.abs(self.gs[row - 1][col] - self.gs[row][col - 1])
-
-            cv = np.abs(self.gs[row][col + 1] - self.gs[row][col - 1])
-
-            if self.M[row][col] == self.E[row][col] + self.M[row - 1][col] + cv:
-                continue
-
-            elif self.M[row][col] == self.E[row][col] + self.M[row - 1][col - 1] + cl:
-                col -= 1
-
-            elif col < self.M.shape[1] - 3:
-                col += 1
-        return seam
+        raise NotImplementedError("TODO: Implement SeamImage.backtrack_seam_b")
 
     # @NI_decor
     def remove_seam(self):
@@ -335,23 +263,7 @@ class VerticalSeamImage(SeamImage):
         Guidelines & hints:
         In order to apply the removal, you might want to extend the seam mask to support 3 channels (rgb) using: 3d_mak = np.stack([1d_mask] * 3, axis=2), and then use it to create a resized version.
         """
-        seam = self.backtrack_seam()
-
-        h, w, _ = self.rgb.shape
-        # Step 2: Create a mask with False values at the seam's positions
-        mask = np.ones((h, w), dtype=bool)
-        for row, col in enumerate(seam):
-            mask[row, col] = False
-
-        # Step 3: Extend the mask to 3 channels (RGB)
-        mask_3d = np.stack([mask] * 3, axis=2)
-
-        # Step 4: Apply the mask to the image to filter out the seam
-        # This flattens the masked image, so we need to reshape it to maintain its 3D structure
-        resized_image = self.rgb[mask_3d].reshape((h, w - 1, 3))
-
-        # Update the image to reflect the removal of the seam
-        self.resized_rgb = resized_image
+        raise NotImplementedError("TODO: Implement SeamImage.remove_seam")
 
     # @NI_decor
     def seams_addition(self, num_add: int):
@@ -367,7 +279,7 @@ class VerticalSeamImage(SeamImage):
 
         """
         raise NotImplementedError("TODO: Implement SeamImage.seams_addition")
-    
+
     # @NI_decor
     def seams_addition_horizontal(self, num_add):
         """ A wrapper for removing num_add horizontal seams (just a recommendation)
@@ -396,7 +308,7 @@ class VerticalSeamImage(SeamImage):
     # @jit(nopython=True)
     def calc_bt_mat(M, E, backtrack_mat):
         """ Fills the BT back-tracking index matrix. This function is static in order to support Numba. To use it, uncomment the decorator above.
-        
+
         Recommnded parameters (member of the class, to be filled):
             M: np.ndarray (float32) of shape (h,w)
             backtrack_mat: np.ndarray (int32) of shape (h,w): to be filled here
