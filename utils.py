@@ -118,16 +118,12 @@ class SeamImage:
         pass
 
     def rotate_mats(self, clockwise):
-        if clockwise:
-            # Rotate the image and index maps for horizontal processing
-            self.resized_rgb = np.rot90(self.resized_rgb)
-            self.idx_map_v = np.rot90(self.idx_map_v)
-            self.idx_map_h = np.rot90(self.idx_map_h)
-        else:
-            # Rotate the image and index maps back to original
-            self.resized_rgb = np.rot90(self.resized_rgb, k=3)
-            self.idx_map_v = np.rot90(self.idx_map_v, k=3)
-            self.idx_map_h = np.rot90(self.idx_map_h, k=3)
+        k = 2 if clockwise else 2  # Rotate 90 degrees clockwise or 270 degrees clockwise to return
+
+        # Apply the rotation to the image and index maps
+        self.resized_rgb = np.rot90(self.resized_rgb, k=k)
+        self.idx_map_v = np.rot90(self.idx_map_v, k=k)
+        self.idx_map_h = np.rot90(self.idx_map_h, k=k)
 
     def init_mats(self):
         pass
@@ -215,7 +211,12 @@ class VerticalSeamImage(SeamImage):
             - removing seams couple of times (call the function more than once)
             - visualize the original image with removed seams marked (for comparison)
         """
-        raise NotImplementedError("TODO: Implement SeamImage.seams_removal")
+        for _ in range(num_remove):
+            self.init_mats()
+            self.backtrack_seam()
+            self.remove_seam()
+
+        self.paint_seams()
 
     def paint_seams(self):
         for s in self.seam_history:
@@ -237,9 +238,9 @@ class VerticalSeamImage(SeamImage):
         Parameters:
             num_remove (int): number of horizontal seam to be removed
         """
-        self.rotate_mats(clockwise=True)
+        self.rotate_mats(True)
         self.seams_removal(num_remove)
-        self.rotate_mats(clockwise=False)
+        self.rotate_mats(False)
 
     # @NI_decor
     def seams_removal_vertical(self, num_remove):
@@ -248,13 +249,28 @@ class VerticalSeamImage(SeamImage):
         Parameters:
             num_remove (int): umber of vertical seam to be removed
         """
-        raise NotImplementedError("TODO: Implement SeamImage.seams_removal_vertical")
+        self.seams_removal(num_remove)
 
     # @NI_decor
     def backtrack_seam(self):
         """ Backtracks a seam for Seam Carving as taught in lecture
         """
-        raise NotImplementedError("TODO: Implement SeamImage.backtrack_seam_b")
+        h, w = self.M.shape
+        seam = np.zeros(h, dtype=np.int32)
+
+        # Start from the bottom row, find the minimum energy pixel
+        seam[h - 1] = np.argmin(self.M[-1])
+
+        for i in range(h - 2, -1, -1):
+            prev_x = seam[i + 1]
+            # Ensure indices are within bounds
+            left = max(prev_x - 1, 0)
+            right = min(prev_x + 2, w)
+            seam[i] = prev_x + np.argmin(self.M[i, left:right]) - (1 if prev_x > 0 else 0)
+            self.backtrack_mat[i, seam[i]] = 1
+
+        # Save the seam for potential visualization
+        self.seam_history.append(seam)
 
     # @NI_decor
     def remove_seam(self):
@@ -263,7 +279,20 @@ class VerticalSeamImage(SeamImage):
         Guidelines & hints:
         In order to apply the removal, you might want to extend the seam mask to support 3 channels (rgb) using: 3d_mak = np.stack([1d_mask] * 3, axis=2), and then use it to create a resized version.
         """
-        raise NotImplementedError("TODO: Implement SeamImage.remove_seam")
+        h, w, _ = self.resized_rgb.shape
+        mask = np.ones((h, w), dtype=bool)
+        for i, s in enumerate(self.seam_history[-1]):
+            if s < w:  # Ensure s is within the current width
+                mask[i, s] = False
+
+        # Update image and grayscale versions
+        self.resized_rgb = self.resized_rgb[mask].reshape((h, w - 1, 3))
+        self.resized_gs = self.resized_gs[mask].reshape((h, w - 1))
+        self.update_idx_maps()
+
+    def update_idx_maps(self):
+        h, w = self.resized_rgb.shape[:2]
+        self.idx_map_v, self.idx_map_h = np.meshgrid(range(w), range(h))
 
     # @NI_decor
     def seams_addition(self, num_add: int):
