@@ -99,7 +99,7 @@ class SeamImage:
         y_gradients[1:-1, :] = self.gs[2:, :] - self.gs[:-2, :]
 
         gradient_magnitude = np.abs(x_gradients) + np.abs(y_gradients)
-
+        
         # Normalize to range [0,1]
         gradient_magnitude = np.clip(gradient_magnitude, 0, 1)
 
@@ -118,7 +118,7 @@ class SeamImage:
         pass
 
     def rotate_mats(self, clockwise):
-        k = 2 if clockwise else 2  # Rotate 90 degrees clockwise or 270 degrees clockwise to return
+        k = 1 if clockwise else 3  # Rotate 90 degrees clockwise or 270 degrees clockwise to return
 
         # Apply the rotation to the image and index maps
         self.resized_rgb = np.rot90(self.resized_rgb, k=k)
