@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 from PIL import Image
 from numba import jit
@@ -211,19 +213,38 @@ class VerticalSeamImage(SeamImage):
             - removing seams couple of times (call the function more than once)
             - visualize the original image with removed seams marked (for comparison)
         """
+        tmp_mask = np.ones_like(self.gs, dtype=bool)
         for _ in range(num_remove):
-            self.init_mats()
-            self.backtrack_seam()
-            self.remove_seam()
+            self.E = self.calc_gradient_magnitude()
+            self.M = self.calc_M()
 
-        self.paint_seams()
+            seam = self.backtrack_seam()
+            for row, col in seam:
+                self.cumm_mask[row][col] = False
+                tmp_mask[row][col] = False
+
+            t = np.roll(self.gs, 1, axis=0)
+            self.gs = np.where(tmp_mask, self.gs, t)
+            self.gs = np.delete(self.gs, -1, axis=1)
+
+            t = np.roll(self.resized_rgb, 1, axis=0)
+            self.resized_rgb = np.where(tmp_mask, self.resized_rgb, t)
+            self.resized_rgb = np.delete(self.resized_rgb, -1, axis=1)
+
+            t = np.roll(tmp_mask, 1, axis=0)
+            tmp_mask = np.where(tmp_mask, tmp_mask, t)
+            tmp_mask = np.delete(tmp_mask, -1, axis=1)
+
+        cumm_mask_rgb = np.stack([self.cumm_mask] * 3, axis=2)
+        self.seams_rgb = np.where(cumm_mask_rgb, self.seams_rgb, [1,0,0])
+
 
     def paint_seams(self):
         for s in self.seam_history:
             for i, s_i in enumerate(s):
-                self.cumm_mask[self.idx_map_v[i, s_i], self.idx_map_h[i, s_i]] = False
+                self.cumm_mask[self.idx_map_v[i,s_i], self.idx_map_h[i,s_i]] = False
         cumm_mask_rgb = np.stack([self.cumm_mask] * 3, axis=2)
-        self.seams_rgb = np.where(cumm_mask_rgb, self.seams_rgb, [1, 0, 0])
+        self.seams_rgb = np.where(cumm_mask_rgb, self.seams_rgb, [1,0,0])
 
     def init_mats(self):
         self.E = self.calc_gradient_magnitude()
@@ -255,22 +276,20 @@ class VerticalSeamImage(SeamImage):
     def backtrack_seam(self):
         """ Backtracks a seam for Seam Carving as taught in lecture
         """
-        h, w = self.M.shape
-        seam = np.zeros(h, dtype=np.int32)
+        last_row = len(self.M) - 1
+        col = np.argmin(self.M[last_row][1:-1])
+        seam = []
+        seam.append([last_row, col])
+        for row in range(last_row - 1, -1, -1):
+            left = math.inf if col - 1 < 0 else col - 1
+            right = math.inf if col + 1 > self.M.shape[1] else col + 1
+            up = col
 
-        # Start from the bottom row, find the minimum energy pixel
-        seam[h - 1] = np.argmin(self.M[-1])
+            col = left if self.M[row, left] < self.M[row, up] else up
+            col = right if self.M[row, right] < self.M[row, col] else col
+            seam.append([row, col])
 
-        for i in range(h - 2, -1, -1):
-            prev_x = seam[i + 1]
-            # Ensure indices are within bounds
-            left = max(prev_x - 1, 0)
-            right = min(prev_x + 2, w)
-            seam[i] = prev_x + np.argmin(self.M[i, left:right]) - (1 if prev_x > 0 else 0)
-            self.backtrack_mat[i, seam[i]] = 1
-
-        # Save the seam for potential visualization
-        self.seam_history.append(seam)
+        return seam
 
     # @NI_decor
     def remove_seam(self):
@@ -345,8 +364,11 @@ class VerticalSeamImage(SeamImage):
         Guidelines & hints:
             np.ndarray is a rederence type. changing it here may affected outsde.
         """
-        raise NotImplementedError("TODO: Implement SeamImage.calc_bt_mat")
-        h, w = M.shape
+        for row in range(len(backtrack_mat)):
+            for col in range(len(backtrack_mat[row])):
+                backtrack_mat[row][col] = [row, col]
+
+        return backtrack_mat
 
 
 class SCWithObjRemoval(VerticalSeamImage):
@@ -464,3 +486,7 @@ def bilinear(image, new_shape):
     c2 = np.reshape(image[y2s][:,x1s] * dx + (1 - dx) * image[y2s][:,x2s], (out_width, out_height, 3))
     new_image = np.reshape(c1 * dy + (1 - dy) * c2, (out_height, out_width, 3)).astype(int)
     return new_image
+
+img_path = "images/llamas.png"
+vs_img = VerticalSeamImage(img_path=img_path, vis_seams=True)
+vs_img.seams_removal_vertical(100)
