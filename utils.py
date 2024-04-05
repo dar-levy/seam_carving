@@ -261,6 +261,8 @@ class VerticalSeamImage(SeamImage):
         Parameters:
             num_remove (int): number of horizontal seam to be removed
         """
+        self.resized_rgb = self.rgb.copy()
+        self.gs = self.rgb_to_grayscale(self.rgb)
         self.rotate_mats(True)
         self.seams_removal(num_remove)
         self.rotate_mats(False)
