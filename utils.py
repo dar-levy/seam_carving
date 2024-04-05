@@ -156,6 +156,9 @@ class VerticalSeamImage(SeamImage):
         """
         super().__init__(*args, **kwargs)
         try:
+            self.tmp_mask = np.copy(self.cumm_mask)
+            self.seams_rgb = np.pad(self.rgb, pad_width=((1, 1), (1, 1), (0, 0)), mode='constant', constant_values=0.5)
+            self.resized_rgb = np.pad(self.resized_rgb, pad_width=((1, 1), (1, 1), (0, 0)), mode='constant', constant_values=0.5)
             self.M = self.calc_M()
         except NotImplementedError as e:
             print(e)
@@ -235,8 +238,7 @@ class VerticalSeamImage(SeamImage):
             tmp_mask = np.where(tmp_mask, tmp_mask, t)
             tmp_mask = np.delete(tmp_mask, -1, axis=1)
 
-        cumm_mask_rgb = np.stack([self.cumm_mask] * 3, axis=2)
-        self.seams_rgb = np.where(cumm_mask_rgb, self.seams_rgb, [1,0,0])
+        self.seams_rgb = np.where(self.cumm_mask, self.seams_rgb, (1, 0, 0))
 
 
     def paint_seams(self):
