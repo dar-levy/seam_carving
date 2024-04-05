@@ -156,9 +156,6 @@ class VerticalSeamImage(SeamImage):
         """
         super().__init__(*args, **kwargs)
         try:
-            self.tmp_mask = np.copy(self.cumm_mask)
-            self.seams_rgb = np.pad(self.rgb, pad_width=((1, 1), (1, 1), (0, 0)), mode='constant', constant_values=0.5)
-            self.resized_rgb = np.pad(self.resized_rgb, pad_width=((1, 1), (1, 1), (0, 0)), mode='constant', constant_values=0.5)
             self.M = self.calc_M()
         except NotImplementedError as e:
             print(e)
@@ -220,7 +217,6 @@ class VerticalSeamImage(SeamImage):
         for _ in range(num_remove):
             self.E = self.calc_gradient_magnitude()
             self.M = self.calc_M()
-
             seam = self.backtrack_seam()
             for row, col in seam:
                 self.cumm_mask[row][col] = False
@@ -230,15 +226,14 @@ class VerticalSeamImage(SeamImage):
             self.gs = np.where(tmp_mask, self.gs, t)
             self.gs = np.delete(self.gs, -1, axis=1)
 
-            t = np.roll(self.resized_rgb, 1, axis=0)
-            self.resized_rgb = np.where(tmp_mask, self.resized_rgb, t)
-            self.resized_rgb = np.delete(self.resized_rgb, -1, axis=1)
+            self.resized_rgb = self.resized_rgb[tmp_mask]
+            self.resized_rgb = self.resized_rgb.reshape((720, -1, 3))
 
-            t = np.roll(tmp_mask, 1, axis=0)
-            tmp_mask = np.where(tmp_mask, tmp_mask, t)
-            tmp_mask = np.delete(tmp_mask, -1, axis=1)
+            tmp_mask = tmp_mask[tmp_mask]
+            tmp_mask = tmp_mask.reshape((720, -1))
 
-        self.seams_rgb = np.where(self.cumm_mask, self.seams_rgb, (1, 0, 0))
+        cumm_mask_rgb = np.stack([self.cumm_mask] * 3, axis=2)
+        self.seams_rgb = np.where(cumm_mask_rgb, self.seams_rgb, [1,0,0])
 
 
     def paint_seams(self):
@@ -279,7 +274,7 @@ class VerticalSeamImage(SeamImage):
         """ Backtracks a seam for Seam Carving as taught in lecture
         """
         last_row = len(self.M) - 1
-        col = np.argmin(self.M[last_row][1:-1])
+        col = np.argmin(self.M[last_row])
         seam = []
         seam.append([last_row, col])
         for row in range(last_row - 1, -1, -1):
