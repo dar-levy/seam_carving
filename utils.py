@@ -97,11 +97,11 @@ class SeamImage:
 
         # Calculate the partial derivatives
         # which are the pixel differences horizontally and vertically in a gray-scale image
-        x_gradients[:, 1:-1] = self.gs[:, 2:] - self.gs[:, :-2]
-        y_gradients[1:-1, :] = self.gs[2:, :] - self.gs[:-2, :]
+        x_gradients[:, :-1] = self.gs[:, 1:] - self.gs[:, :-1]
+        y_gradients[:-1, :] = self.gs[1:, :] - self.gs[:-1, :]
 
-        gradient_magnitude = np.abs(x_gradients) + np.abs(y_gradients)
-        
+        gradient_magnitude = np.sqrt(x_gradients**2 + y_gradients**2)
+
         # Normalize to range [0,1]
         gradient_magnitude = np.clip(gradient_magnitude, 0, 1)
 
