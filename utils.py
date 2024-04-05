@@ -124,6 +124,10 @@ class SeamImage:
 
         # Apply the rotation to the image and index maps
         self.resized_rgb = np.rot90(self.resized_rgb, k=k)
+        self.gs = np.rot90(self.gs, k=k)
+        self.cumm_mask = np.rot90(self.cumm_mask, k=k)
+        self.seams_rgb = np.rot90(self.seams_rgb, k=k)
+
         self.idx_map_v = np.rot90(self.idx_map_v, k=k)
         self.idx_map_h = np.rot90(self.idx_map_h, k=k)
 
@@ -214,6 +218,7 @@ class VerticalSeamImage(SeamImage):
             - visualize the original image with removed seams marked (for comparison)
         """
         tmp_mask = np.ones_like(self.gs, dtype=bool)
+        height = self.resized_rgb.shape[0]
         for _ in range(num_remove):
             self.E = self.calc_gradient_magnitude()
             self.M = self.calc_M()
@@ -227,10 +232,10 @@ class VerticalSeamImage(SeamImage):
             self.gs = np.delete(self.gs, -1, axis=1)
 
             self.resized_rgb = self.resized_rgb[tmp_mask]
-            self.resized_rgb = self.resized_rgb.reshape((720, -1, 3))
+            self.resized_rgb = self.resized_rgb.reshape((height, -1, 3))
 
             tmp_mask = tmp_mask[tmp_mask]
-            tmp_mask = tmp_mask.reshape((720, -1))
+            tmp_mask = tmp_mask.reshape((height, -1))
 
         cumm_mask_rgb = np.stack([self.cumm_mask] * 3, axis=2)
         self.seams_rgb = np.where(cumm_mask_rgb, self.seams_rgb, [1,0,0])
@@ -487,3 +492,4 @@ def bilinear(image, new_shape):
 img_path = "images/llamas.png"
 vs_img = VerticalSeamImage(img_path=img_path, vis_seams=True)
 vs_img.seams_removal_vertical(100)
+vs_img.seams_removal_horizontal(100)
