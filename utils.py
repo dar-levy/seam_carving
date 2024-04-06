@@ -117,9 +117,7 @@ class SeamImage:
         pass
 
     def rotate_mats(self, clockwise):
-        k = 1 if clockwise else 3  # Rotate 90 degrees clockwise or 270 degrees clockwise to return
-
-        # Apply the rotation to the image and index maps
+        k = 1 if clockwise else 3
         self.resized_rgb = np.rot90(self.resized_rgb, k=k)
         self.gs = np.rot90(self.gs, k=k)
         self.cumm_mask = np.rot90(self.cumm_mask, k=k)
@@ -212,22 +210,16 @@ class VerticalSeamImage(SeamImage):
             - visualize the original image with removed seams marked (for comparison)
         """
         for _ in range(num_remove):
-            self.E = self.calc_gradient_magnitude()
-            self.M = self.calc_M()
+            self.init_mats()
             seam = self.backtrack_seam()
             for row, col in seam:
                 self.cumm_mask[row][col] = False
 
             self.remove_seam(seam)
 
-        cumm_mask_rgb = np.stack([self.cumm_mask] * 3, axis=2)
-        self.seams_rgb = np.where(cumm_mask_rgb, self.seams_rgb, [1,0,0])
-
+        self.paint_seams()
 
     def paint_seams(self):
-        for s in self.seam_history:
-            for i, s_i in enumerate(s):
-                self.cumm_mask[self.idx_map_v[i,s_i], self.idx_map_h[i,s_i]] = False
         cumm_mask_rgb = np.stack([self.cumm_mask] * 3, axis=2)
         self.seams_rgb = np.where(cumm_mask_rgb, self.seams_rgb, [1,0,0])
 
