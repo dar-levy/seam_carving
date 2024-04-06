@@ -125,9 +125,6 @@ class SeamImage:
         self.cumm_mask = np.rot90(self.cumm_mask, k=k)
         self.seams_rgb = np.rot90(self.seams_rgb, k=k)
 
-        self.idx_map_v = np.rot90(self.idx_map_v, k=k)
-        self.idx_map_h = np.rot90(self.idx_map_h, k=k)
-
     def init_mats(self):
         pass
 
@@ -258,8 +255,8 @@ class VerticalSeamImage(SeamImage):
         Parameters:
             num_remove (int): number of horizontal seam to be removed
         """
-        self.resized_rgb = self.rgb.copy()
-        self.gs = self.rgb_to_grayscale(self.rgb)
+        # self.resized_rgb = self.rgb.copy()
+        # self.gs = self.rgb_to_grayscale(self.rgb)
         self.rotate_mats(True)
         self.seams_removal(num_remove)
         self.rotate_mats(False)
