@@ -215,6 +215,8 @@ class VerticalSeamImage(SeamImage):
 
             self.remove_seam(seam)
 
+        self.h = self.resized_rgb.shape[0]
+        self.w = self.resized_rgb.shape[1]
         self.paint_seams()
 
     def paint_seams(self):
