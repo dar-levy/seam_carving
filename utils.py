@@ -211,25 +211,14 @@ class VerticalSeamImage(SeamImage):
             - removing seams couple of times (call the function more than once)
             - visualize the original image with removed seams marked (for comparison)
         """
-        tmp_mask = np.ones_like(self.gs, dtype=bool)
-        height = self.resized_rgb.shape[0]
         for _ in range(num_remove):
             self.E = self.calc_gradient_magnitude()
             self.M = self.calc_M()
             seam = self.backtrack_seam()
             for row, col in seam:
                 self.cumm_mask[row][col] = False
-                tmp_mask[row][col] = False
 
-            t = np.roll(self.gs, 1, axis=0)
-            self.gs = np.where(tmp_mask, self.gs, t)
-            self.gs = np.delete(self.gs, -1, axis=1)
-
-            self.resized_rgb = self.resized_rgb[tmp_mask]
-            self.resized_rgb = self.resized_rgb.reshape((height, -1, 3))
-
-            tmp_mask = tmp_mask[tmp_mask]
-            tmp_mask = tmp_mask.reshape((height, -1))
+            self.remove_seam(seam)
 
         cumm_mask_rgb = np.stack([self.cumm_mask] * 3, axis=2)
         self.seams_rgb = np.where(cumm_mask_rgb, self.seams_rgb, [1,0,0])
@@ -287,25 +276,20 @@ class VerticalSeamImage(SeamImage):
             col = right if self.M[row, right] < self.M[row, col] else col
             seam.append([row, col])
 
+        seam.reverse()
+
         return seam
 
     # @NI_decor
-    def remove_seam(self):
+    def remove_seam(self, seam):
         """ Removes a seam from self.rgb (you may create a resized version, like self.resized_rgb)
 
         Guidelines & hints:
         In order to apply the removal, you might want to extend the seam mask to support 3 channels (rgb) using: 3d_mak = np.stack([1d_mask] * 3, axis=2), and then use it to create a resized version.
         """
-        h, w, _ = self.resized_rgb.shape
-        mask = np.ones((h, w), dtype=bool)
-        for i, s in enumerate(self.seam_history[-1]):
-            if s < w:  # Ensure s is within the current width
-                mask[i, s] = False
-
-        # Update image and grayscale versions
-        self.resized_rgb = self.resized_rgb[mask].reshape((h, w - 1, 3))
-        self.resized_gs = self.resized_gs[mask].reshape((h, w - 1))
-        self.update_idx_maps()
+        height, width = self.resized_rgb.shape[:2]
+        self.gs = np.array([np.delete(self.gs[row], seam[row][1], axis=0) for row in range(height)])
+        self.resized_rgb = np.array([np.delete(self.resized_rgb[row], seam[row][1], axis=0) for row in range(height)])
 
     def update_idx_maps(self):
         h, w = self.resized_rgb.shape[:2]
