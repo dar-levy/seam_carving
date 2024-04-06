@@ -75,8 +75,6 @@ class SeamImage:
             To prevent outlier values in the boundaries, we recommend to pad them with 0.5
         """
         grayscale_image = np.dot(np_img, self.gs_weights).squeeze()
-
-        # Normalize to range [0,1]
         grayscale_image = np.clip(grayscale_image, 0, 1)
 
         return grayscale_image
