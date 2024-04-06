@@ -92,21 +92,18 @@ class SeamImage:
             - keep in mind that values must be in range [0,1]
             - np.gradient or other off-the-shelf tools are NOT allowed, however feel free to compare yourself to them
         """
-        x_gradients = np.zeros_like(self.gs)
-        y_gradients = np.zeros_like(self.gs)
+        x0 = np.roll(self.resized_rgb, -1, axis=1).T
+        x1 = np.roll(self.resized_rgb, 1, axis=1).T
+        y0 = np.roll(self.resized_rgb, -1, axis=0).T
+        y1 = np.roll(self.resized_rgb, 1, axis=0).T
 
-        # Calculate the partial derivatives
-        # which are the pixel differences horizontally and vertically in a gray-scale image
-        x_gradients[:, :-1] = self.gs[:, 1:] - self.gs[:, :-1]
-        y_gradients[:-1, :] = self.gs[1:, :] - self.gs[:-1, :]
-
-        gradient_magnitude = np.sqrt(x_gradients**2 + y_gradients**2)
-
-        # Normalize to range [0,1]
-        gradient_magnitude = np.clip(gradient_magnitude, 0, 1)
+        gradient_magnitude = self.dual_gradient_energy(x0, x1, y0, y1).T
 
         return gradient_magnitude
-        
+
+    def dual_gradient_energy(self, x0, x1, y0, y1):
+        return sum(pow((x0 - x1), 2) + pow((y0 - y1), 2))
+
     def calc_M(self):
         pass
              
