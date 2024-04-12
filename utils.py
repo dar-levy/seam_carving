@@ -265,7 +265,8 @@ class VerticalSeamImage(SeamImage):
             up = col
 
             col = left if self.M[row, left] < self.M[row, up] else up
-            col = right if self.M[row, right] < self.M[row, col] else col
+            if right < self.M.shape[1]:
+                col = right if self.M[row, right] < self.M[row, col] else col
             seam.append([row, col])
 
         seam.reverse()
@@ -429,7 +430,11 @@ def scale_to_shape(orig_shape: np.ndarray, scale_factors: list):
     Returns
         the new shape
     """
-    raise NotImplementedError("TODO: Implement scale_to_shape")
+    # Ensure the original shape and scale factors are correctly formatted and compatible.
+    orig_y = orig_shape[0]
+    orig_x = orig_shape[1]
+
+    return [int(scale_factors[0] * orig_y), int(scale_factors[1] * orig_shape[1])]
 
 
 def resize_seam_carving(seam_img: SeamImage, shapes: np.ndarray):
@@ -442,8 +447,11 @@ def resize_seam_carving(seam_img: SeamImage, shapes: np.ndarray):
     Returns
         the resized rgb image
     """
-    raise NotImplementedError("TODO: Implement resize_seam_carving")
-
+    orig_shape = shapes[0]
+    new_shape = shapes[1]
+    seam_img.seams_removal_horizontal(orig_shape[0] - new_shape[0])
+    seam_img.seams_removal_vertical(orig_shape[1] - new_shape[1])
+    return seam_img.resized_rgb
 
 def bilinear(image, new_shape):
     """
