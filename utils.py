@@ -264,7 +264,7 @@ class VerticalSeamImage(SeamImage):
             left = col - 1
             right = col + 1
 
-            col = left if col - 1 >= 0 and self.M[row, left] < self.M[row, up] else up
+            col = left if left >= 0 and self.M[row, left] < self.M[row, up] else up
             col = right if right < self.M.shape[1] and self.M[row, right] < self.M[row, col] else col
             seam.append([row, col])
 
