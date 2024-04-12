@@ -260,13 +260,12 @@ class VerticalSeamImage(SeamImage):
         seam = []
         seam.append([last_row, col])
         for row in range(last_row - 1, -1, -1):
-            left = math.inf if col - 1 < 0 else col - 1
-            right = math.inf if col + 1 > self.M.shape[1] else col + 1
             up = col
+            left = col - 1
+            right = col + 1
 
-            col = left if self.M[row, left] < self.M[row, up] else up
-            if right < self.M.shape[1]:
-                col = right if self.M[row, right] < self.M[row, col] else col
+            col = left if col - 1 >= 0 and self.M[row, left] < self.M[row, up] else up
+            col = right if right < self.M.shape[1] and self.M[row, right] < self.M[row, col] else col
             seam.append([row, col])
 
         seam.reverse()
