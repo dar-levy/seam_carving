@@ -211,6 +211,9 @@ class VerticalSeamImage(SeamImage):
             self.init_mats()
             seam = self.backtrack_seam()
             for row, col in seam:
+                while not self.cumm_mask[row][col] and col + 1 < self.rgb.shape[1]:
+                    col += 1
+
                 self.cumm_mask[row][col] = False
 
             self.remove_seam(seam)
