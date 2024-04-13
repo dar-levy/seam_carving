@@ -239,8 +239,6 @@ class VerticalSeamImage(SeamImage):
         Parameters:
             num_remove (int): number of horizontal seam to be removed
         """
-        # self.resized_rgb = self.rgb.copy()
-        # self.gs = self.rgb_to_grayscale(self.rgb)
         self.rotate_mats(True)
         self.seams_removal(num_remove)
         self.rotate_mats(False)
@@ -398,8 +396,6 @@ class SCWithObjRemoval(VerticalSeamImage):
 
         self.M = self.calc_M()
 
-        # raise NotImplementedError("TODO: Implement SeamImage.apply_mask")
-
     def init_mats(self):
         self.E = self.calc_gradient_magnitude()
         self.M = self.calc_M()
@@ -450,10 +446,10 @@ def resize_seam_carving(seam_img: SeamImage, shapes: np.ndarray):
         the resized rgb image
     """
     seam_img.reinit()
-    orig_shape = shapes[0]
+    original_shape = shapes[0]
     new_shape = shapes[1]
-    seam_img.seams_removal_horizontal(orig_shape[0] - new_shape[0])
-    seam_img.seams_removal_vertical(orig_shape[1] - new_shape[1])
+    seam_img.seams_removal_horizontal(original_shape[0] - new_shape[0])
+    seam_img.seams_removal_vertical(original_shape[1] - new_shape[1])
 
     return seam_img.resized_rgb
 
