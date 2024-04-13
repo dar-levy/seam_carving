@@ -115,7 +115,7 @@ class SeamImage:
         pass
 
     def rotate_mats(self, clockwise):
-        k = 1 if clockwise else 3
+        k = 3 if clockwise else 1
         self.resized_rgb = np.rot90(self.resized_rgb, k=k)
         self.gs = np.rot90(self.gs, k=k)
         self.cumm_mask = np.rot90(self.cumm_mask, k=k)
@@ -449,10 +449,12 @@ def resize_seam_carving(seam_img: SeamImage, shapes: np.ndarray):
     Returns
         the resized rgb image
     """
+    seam_img.reinit()
     orig_shape = shapes[0]
     new_shape = shapes[1]
     seam_img.seams_removal_horizontal(orig_shape[0] - new_shape[0])
     seam_img.seams_removal_vertical(orig_shape[1] - new_shape[1])
+
     return seam_img.resized_rgb
 
 def bilinear(image, new_shape):
