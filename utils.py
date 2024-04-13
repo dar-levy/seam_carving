@@ -172,10 +172,10 @@ class VerticalSeamImage(SeamImage):
         for i in range(1, h):
             # Shift M matrix to get predecessors
             left = np.roll(M[i - 1, :], 1)
-            left[0] = np.inf  # Avoid wraparound to the right
+            left[0] = np.inf
             up = M[i - 1, :]
             right = np.roll(M[i - 1, :], -1)
-            right[-1] = np.inf  # Avoid wraparound to the left
+            right[-1] = np.inf
 
             # Find the minimum energy predecessor for each pixel
             M[i, :] = self.E[i, :] + np.minimum(np.minimum(left, up), right)
