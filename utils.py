@@ -90,17 +90,16 @@ class SeamImage:
             - keep in mind that values must be in range [0,1]
             - np.gradient or other off-the-shelf tools are NOT allowed, however feel free to compare yourself to them
         """
-        x0 = np.roll(self.resized_rgb, -1, axis=1).T
-        y0 = np.roll(self.resized_rgb, -1, axis=0).T
-        x1 = np.roll(self.resized_rgb, 1, axis=1).T
-        y1 = np.roll(self.resized_rgb, 1, axis=0).T
+        gs_3d = np.expand_dims(self.gs, axis=-1)
+        x0 = np.roll(gs_3d, -1, axis=1).T
+        x1 = np.roll(gs_3d, 1, axis=1).T
+        y0 = np.roll(gs_3d, -1, axis=0).T
+        y1 = np.roll(gs_3d, 1, axis=0).T
 
-        gradient_magnitude = self.calc_dual_gradient_energy(x0, x1, y0, y1).T
+        gradient_energy = sum(pow((x0 - x1), 2) + pow((y0 - y1), 2))
+        gradient_magnitude = gradient_energy.T
 
         return gradient_magnitude
-
-    def calc_dual_gradient_energy(self, x0, x1, y0, y1):
-        return sum(pow((x0 - x1), 2) + pow((y0 - y1), 2))
 
     def calc_M(self):
         pass
