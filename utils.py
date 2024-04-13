@@ -323,7 +323,6 @@ class VerticalSeamImage(SeamImage):
         Parameters:
             num_add (int): number of vertical seam to be added
         """
-
         raise NotImplementedError("TODO (Bonus): Implement SeamImage.seams_addition_vertical")
 
     # @NI_decor
@@ -375,8 +374,6 @@ class SCWithObjRemoval(VerticalSeamImage):
         """
         for k in self.active_masks:
             self.obj_masks[k] = np.where(self.obj_masks[k] > 0.5, 1, 0)
-
-        # raise NotImplementedError("TODO: Implement SeamImage.preprocess_masks")
 
         print('Active masks:', self.active_masks)
 
