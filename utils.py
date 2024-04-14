@@ -315,8 +315,6 @@ class VerticalSeamImage(SeamImage):
         self.w = self.resized_rgb.shape[1]
         self.paint_seams(green=1, red=0)
 
-        # raise NotImplementedError("TODO: Implement SeamImage.seams_addition")
-
     def add_seam(self, seam):
         """ Adds a seam from self.rgb (you may create a resized version, like self.resized_rgb)
 
@@ -350,8 +348,6 @@ class VerticalSeamImage(SeamImage):
         self.rotate_mats(True)
         self.seams_addition(num_add)
         self.rotate_mats(False)
-        
-        # raise NotImplementedError("TODO (Bonus): Implement SeamImage.seams_addition_horizontal")
 
     # @NI_decor
     def seams_addition_vertical(self, num_add):
@@ -361,8 +357,6 @@ class VerticalSeamImage(SeamImage):
             num_add (int): number of vertical seam to be added
         """
         self.seams_addition(num_add)
-
-        #  raise NotImplementedError("TODO (Bonus): Implement SeamImage.seams_addition_vertical")
 
     # @NI_decor
     @staticmethod
