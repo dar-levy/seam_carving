@@ -90,14 +90,15 @@ class SeamImage:
             - keep in mind that values must be in range [0,1]
             - np.gradient or other off-the-shelf tools are NOT allowed, however feel free to compare yourself to them
         """
-        gs_3d = np.expand_dims(self.gs, axis=-1)
-        x0 = np.roll(gs_3d, -1, axis=1).T
-        x1 = np.roll(gs_3d, 1, axis=1).T
-        y0 = np.roll(gs_3d, -1, axis=0).T
-        y1 = np.roll(gs_3d, 1, axis=0).T
+        x_grad = np.zeros_like(self.gs)
+        y_grad = np.zeros_like(self.gs)
 
-        gradient_energy = sum(pow((x0 - x1), 2) + pow((y0 - y1), 2))
-        gradient_magnitude = gradient_energy.T
+        x_grad[:, 1:-1] = self.gs[:, 2:] - self.gs[:, :-2]
+        y_grad[1:-1, :] = self.gs[2:, :] - self.gs[:-2, :]
+
+        # Calculate the gradient magnitude
+        gradient_magnitude = np.sqrt(x_grad ** 2 + y_grad ** 2)
+        gradient_magnitude = gradient_magnitude / np.max(gradient_magnitude)
 
         return gradient_magnitude
 
@@ -221,9 +222,9 @@ class VerticalSeamImage(SeamImage):
         self.w = self.resized_rgb.shape[1]
         self.paint_seams()
 
-    def paint_seams(self):
+    def paint_seams(self, red = 1, green = 0):
         cumm_mask_rgb = np.stack([self.cumm_mask] * 3, axis=2)
-        self.seams_rgb = np.where(cumm_mask_rgb, self.seams_rgb, [1,0,0])
+        self.seams_rgb = np.where(cumm_mask_rgb, self.seams_rgb, [red,green,0])
 
     def init_mats(self):
         self.E = self.calc_gradient_magnitude()
@@ -300,7 +301,40 @@ class VerticalSeamImage(SeamImage):
             - Visualization: paint the added seams in green (0,255,0)
 
         """
-        raise NotImplementedError("TODO: Implement SeamImage.seams_addition")
+        for _ in range(num_add):
+            self.init_mats()
+            seam = self.backtrack_seam()
+            for row, col in seam:
+                if row < self.rgb.shape[0] and col < self.rgb.shape[1]:
+                    self.cumm_mask[row][col] = False
+                    self.mask[row][col] = False
+
+            self.add_seam(seam)
+
+        self.h = self.resized_rgb.shape[0]
+        self.w = self.resized_rgb.shape[1]
+        self.paint_seams(green=1, red=0)
+
+        # raise NotImplementedError("TODO: Implement SeamImage.seams_addition")
+
+    def add_seam(self, seam):
+        """ Adds a seam from self.rgb (you may create a resized version, like self.resized_rgb)
+
+        Guidelines & hints:
+        In order to apply the add, you might want to extend the seam mask to support 3 channels (rgb) using: 3d_mak = np.stack([1d_mask] * 3, axis=2), and then use it to create a resized version.
+        """
+        # height, width = self.resized_rgb.shape[:2]
+        # self.gs = np.array([np.add(self.gs[row], seam[row][1], axis=0) for row in range(height)])
+        # self.resized_rgb = np.array([np.add(self.resized_rgb[row], seam[row][1], axis=0) for row in range(height)])
+
+        for row, col in seam:
+            # Change weights of chosen seam to infinity so it wont be chosen again
+            self.E[row][col] = math.inf
+
+        # Add the seam to the image
+        height, width = self.resized_rgb.shape[:2]
+        self.gs = np.array([np.insert(self.gs[row], seam[row][1], self.gs[row][seam[row][1]]) for row in range(height)])
+        self.resized_rgb = np.array([np.insert(self.resized_rgb[row], seam[row][1], self.resized_rgb[row][seam[row][1]], axis=0) for row in range(height)])
 
     # @NI_decor
     def seams_addition_horizontal(self, num_add):
@@ -313,7 +347,11 @@ class VerticalSeamImage(SeamImage):
             You may find np.rot90 function useful
 
         """
-        raise NotImplementedError("TODO (Bonus): Implement SeamImage.seams_addition_horizontal")
+        self.rotate_mats(True)
+        self.seams_addition(num_add)
+        self.rotate_mats(False)
+        
+        # raise NotImplementedError("TODO (Bonus): Implement SeamImage.seams_addition_horizontal")
 
     # @NI_decor
     def seams_addition_vertical(self, num_add):
@@ -322,7 +360,9 @@ class VerticalSeamImage(SeamImage):
         Parameters:
             num_add (int): number of vertical seam to be added
         """
-        raise NotImplementedError("TODO (Bonus): Implement SeamImage.seams_addition_vertical")
+        self.seams_addition(num_add)
+
+        #  raise NotImplementedError("TODO (Bonus): Implement SeamImage.seams_addition_vertical")
 
     # @NI_decor
     @staticmethod
