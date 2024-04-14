@@ -512,8 +512,3 @@ def bilinear(image, new_shape):
     c2 = np.reshape(image[y2s][:,x1s] * dx + (1 - dx) * image[y2s][:,x2s], (out_width, out_height, 3))
     new_image = np.reshape(c1 * dy + (1 - dy) * c2, (out_height, out_width, 3)).astype(int)
     return new_image
-
-img_path = "images/llamas.png"
-vs_img = VerticalSeamImage(img_path=img_path, vis_seams=True)
-vs_img.seams_removal_vertical(100)
-vs_img.seams_removal_horizontal(100)
